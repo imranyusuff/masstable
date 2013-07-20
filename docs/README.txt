@@ -1,6 +1,6 @@
-===========================
+===========
 Nuclear Mass Table Toolkit
-===========================
+===========
 
 The Nuclear Mass Table Toolkit provides utilities to work with nuclear mass tables. At the moment the following tables are supported:
 
@@ -85,3 +85,4 @@ Requirements
 	
 * python >= 2.7
 * pandas >= 0.11
+

@@ -1,11 +1,11 @@
-from distutils.core import setup
+from setuptools import setup, find_packages
 
 setup(
-    name='MassTable',
-    version='0.1.0',
+    name='masstable',
+    version='0.1.1',
     author='Yaser Martinez',
     author_email='yaser.martinez@gmail.com',
-    packages=['masstable'],
+    packages=find_packages(),
     url='https://github.com/elyase/masstable',
     license='LICENSE.txt',
     description='Utilities for working with nuclear mass tables.',
