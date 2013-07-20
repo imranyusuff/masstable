@@ -6,7 +6,7 @@ setup(
     author='Yaser Martinez',
     author_email='yaser.martinez@gmail.com',
     packages=['masstable'],
-    url='http://pypi.python.org/pypi/masstable/',
+    url='https://github.com/elyase/masstable',
     license='LICENSE.txt',
     description='Utilities for working with nuclear mass tables.',
     long_description=open('README.txt').read(),
