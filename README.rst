@@ -4,13 +4,20 @@ Nuclear Mass Table Toolkit
 
 The Nuclear Mass Table Toolkit provides utilities to work with nuclear mass tables. At the moment the following tables are supported:
 
-	>>> Table().names
-	'AME2003', 'AME2012', 'DUZU', 'FRDM95', 'KTUY05', 'ETFSI12', 'HFB14'
+* **AME2003**: G. Audi, H. Wapstra, C. Thibault, *Nucl. Phys. A* **729** (2003) 337
+* **AME2012**: G. Audi et al, *Chinese Physics C.*  **36**, No. 12(2012)
+* **DUZU**: J. Duflo, A.P. Zuker, *Phys. Rev. C* **52** (1995)
+* **FRDM95**: Moller, P. et al., *At. Data and Nuc. Data Tables* **59** (1995) 185
+* **KTUY05**: H. Koura, T.Tachibana, M. Uno, M. Yamada, *Progr. Theor. Phys.* **113** (2005) 305
+* **ETFSI12**: Y. Aboussir et al., *At. Data Nucl. Data Tables* **61** (1995) 127
+* **HFB14**: S. Goriely, M. Samyn, J.M. Pearson, *Phys. Rev. C* **75** (2007) 064312
 
-Examples:
+Usage:
 ---------
 
 * Print first 5 elements from Audi 2003:
+
+.. code-block:: python
 
 	>>> from masstable import Table
 	>>> Table('AME2003').head()
@@ -22,13 +29,16 @@ Examples:
 	   3    25.90150
 
 
-* Calculate the root mean squared error of Moller, et al.
-Atomic Data and Nuclear Data Tables, 59(1995), 185-351.
+* Calculate the root mean squared error of Moller, et al. *Atomic Data and Nuclear Data Tables*, **59** (1995), 185-351.
+
+.. code-block:: python
 
 	>>> Table('FRDM95').rmse(relative_to='AME2003')
 	0.890859326191
 
 * Calculate 2 neutron separation energies for even-even nuclei:
+
+.. code-block:: python
 
 	>>> table = Table('AME2012').even_even.s2n
 	Z  N 
@@ -41,6 +51,8 @@ Atomic Data and Nuclear Data Tables, 59(1995), 185-351.
 
 * Select nuclei with Z,N > 28:
 
+.. code-block:: python
+
 	>>> condition = lambda Z,N: Z > 28 and N > 28
 	>>> table.select(condition)
 	30  30    28.016334
@@ -52,16 +64,20 @@ Atomic Data and Nuclear Data Tables, 59(1995), 185-351.
 	       ...
 
 * Plot binding energies per nucleon:
-	>>>
+
+.. code-block:: python
+
+	>>> t = Table('AME2012')
 	>>> (t.binding_energy/t.A).plot()
 
+.. image:: http://i.imgur.com/eKX5S8M.png
 
 Install
 --------
 
 Just do:
 
-	pip install mass_table
+	pip install masstable
 
 
 Requirements
