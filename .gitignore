@@ -4,6 +4,7 @@
 *.so
 
 # Packages
+*.pyc
 *.egg
 *.egg-info
 dist
