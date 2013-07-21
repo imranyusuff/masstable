@@ -195,9 +195,9 @@ class Table(object):
         f = lambda parent, daugther: -parent + daugther + M_P
         return self.derived('s1p', (-1, 0), f)
 
-    def derived(self, name, xxx_todo_changeme, formula):
+    def derived(self, name, relative_coords, formula):
         """Helper function for derived quantities"""
-        (relZ, relN) = xxx_todo_changeme
+        (relZ, relN) = relative_coords
         daughter_idx = [(x[0] + relZ, x[1] + relN) for x in self.df.index]
         values = formula(self.df.values, self.df[daughter_idx].values)
         return Table(df=pd.Series(values, index=self.df.index, name=name + '(' + self.name + ')'))
