@@ -85,3 +85,8 @@ Requirements
 	
 * python >= 2.7
 * pandas >= 0.11
+
+
+Credits
+--------
+Yaser Martinez
