@@ -6,8 +6,11 @@ setup(
     author='Yaser Martinez',
     author_email='yaser.martinez@gmail.com',
     packages=find_packages(),
+    include_package_data=True,
+    zip_safe = False,
+    package_data={'masstable': ['masstable/data/*.txt']},
     url='https://github.com/elyase/masstable',
-    license='LICENSE.txt',
+    license='MIT',
     description='Utilities for working with nuclear mass tables.',
     long_description=open('README.txt').read(),
     install_requires=[
