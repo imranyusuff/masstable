@@ -8,7 +8,6 @@ package_dir, _ = os.path.split(__file__)
 def memoize(f):
     """Really fast memoizer"""
     class memodict(dict):
-
         def __missing__(self, key):
             ret = self[key] = f(key)
             return ret
@@ -21,9 +20,11 @@ class Table(object):
         "Init from a Series/Dataframe (df) of a file (name)"
         if df is not None:
             self.df = df
-        else:
+        elif name in self.names:
+            self.name = name
             self.df = self.load(name)
-        self.df.name = name
+            self.df.name = name
+
 
     names = ['AME2003', 'AME2012', 'DUZU', 'FRDM95', 'KTUY05', 'ETFSI12', 'HFB14']
 
@@ -32,6 +33,10 @@ class Table(object):
         filename = os.path.join(package_dir, 'data', name.upper() + '.txt')
         df = pd.read_csv(filename, header=0, delim_whitespace=True, index_col=[0, 1])
         return df['M']
+
+    @classmethod
+    def from_list(cls, l, name=None):
+        return Table(df=l, name=name)
 
     @property
     def Z(self):
@@ -73,6 +78,10 @@ class Table(object):
             return fn
         else:
             return instance_method
+
+    def __iter__(self):
+        for e in self.df.iteritems():
+            yield e
 
     def align(self, *args, **kwargs):
         result = self.df.align(*args, **kwargs)[0]
@@ -213,3 +222,4 @@ class Table(object):
 
 if __name__ == '__main__':
     print Table('AME2003').head().join(Table('AME2012').head(), Table('DUZU').odd_odd.head())
+    print Table.from_list([1,1])

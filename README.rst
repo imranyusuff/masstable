@@ -5,7 +5,9 @@ Nuclear Mass Table Toolkit
 The Nuclear Mass Table Toolkit provides utilities to work with nuclear mass tables. At the moment the following tables are supported:
 
 * **AME2003**: G. Audi, H. Wapstra, C. Thibault, *Nucl. Phys. A* **729** (2003) 337
+* **AME2003all**: Same as above but including interpolated("#") values
 * **AME2012**: G. Audi et al, *Chinese Physics C.*  **36**, No. 12(2012)
+* **AME2012all**: Same as above but including interpolated("#") values
 * **DUZU**: J. Duflo, A.P. Zuker, *Phys. Rev. C* **52** (1995)
 * **FRDM95**: Moller, P. et al., *At. Data and Nuc. Data Tables* **59** (1995) 185
 * **KTUY05**: H. Koura, T.Tachibana, M. Uno, M. Yamada, *Progr. Theor. Phys.* **113** (2005) 305
