@@ -20,17 +20,20 @@ class Table(object):
         "Init from a Series/Dataframe (df) of a file (name)"
         if df is not None:
             self.df = df
+            self.name = self.df.name
         elif name in self.names:
             self.name = name
             self.df = self.load(name)
             self.df.name = name
+        else:
+            print 'Wrong Table'
 
-
-    names = ['AME2003', 'AME2012', 'DUZU', 'FRDM95', 'KTUY05', 'ETFSI12', 'HFB14']
+    names = ['AME2003', 'AME2003all', 'AME2012', 'AME2012all', 'AME1995', 'AME1995all',
+             'DUZU', 'FRDM95', 'KTUY05', 'ETFSI12', 'HFB14', 'TCSM12']
 
     def load(self, name):
         "Imports a mass table from a file"
-        filename = os.path.join(package_dir, 'data', name.upper() + '.txt')
+        filename = os.path.join(package_dir, 'data', name + '.txt')
         df = pd.read_csv(filename, header=0, delim_whitespace=True, index_col=[0, 1])
         return df['M']
 
@@ -222,4 +225,6 @@ class Table(object):
 
 if __name__ == '__main__':
     print Table('AME2003').head().join(Table('AME2012').head(), Table('DUZU').odd_odd.head())
+    print Table('AME2012all').tail()
+    print Table('AME2012').tail()
     print Table.from_list([1,1])

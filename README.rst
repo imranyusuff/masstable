@@ -8,6 +8,8 @@ The Nuclear Mass Table Toolkit provides utilities to work with nuclear mass tabl
 * **AME2003all**: Same as above but including interpolated("#") values
 * **AME2012**: G. Audi et al, *Chinese Physics C.*  **36**, No. 12(2012)
 * **AME2012all**: Same as above but including interpolated("#") values
+* **AME1995**: Audi, G., and A. H. Wapstra, Nuclear Physics A 595.4 (1995): 409-480
+* **AME1995all**: Same as above but including interpolated("#") values
 * **DUZU**: J. Duflo, A.P. Zuker, *Phys. Rev. C* **52** (1995)
 * **FRDM95**: Moller, P. et al., *At. Data and Nuc. Data Tables* **59** (1995) 185
 * **KTUY05**: H. Koura, T.Tachibana, M. Uno, M. Yamada, *Progr. Theor. Phys.* **113** (2005) 305

@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='masstable',
-    version='0.1.4',
+    version='0.1.7',
     author='Yaser Martinez',
     author_email='yaser.martinez@gmail.com',
     packages=find_packages(),
@@ -12,7 +12,7 @@ setup(
     url='https://github.com/elyase/masstable',
     license='MIT',
     description='Utilities for working with nuclear mass tables.',
-    long_description=open('README.txt').read(),
+    long_description=open('README.rst').read(),
     install_requires=[
         "pandas >= 0.11.0"
     ],
