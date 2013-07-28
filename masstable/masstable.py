@@ -20,13 +20,14 @@ class Table(object):
         "Init from a Series/Dataframe (df) of a file (name)"
         if df is not None:
             self.df = df
-            self.name = self.df.name
         elif name in self.names:
             self.name = name
             self.df = self.load(name)
             self.df.name = name
         else:
-            print 'Wrong Table'
+            print 'Error: Invalid table name. Valid names are:'
+            print ' '.join(Table.names)
+            return None
 
     names = ['AME2003', 'AME2003all', 'AME2012', 'AME2012all', 'AME1995', 'AME1995all',
              'DUZU', 'FRDM95', 'KTUY05', 'ETFSI12', 'HFB14', 'TCSM12']
@@ -70,8 +71,8 @@ class Table(object):
         "Pass properties and method calls to the DataFrame object"
         instance_method = getattr(self.df, attr)
         if callable(instance_method):
-            def fn(*args):
-                result = instance_method(*args)   # ()->call the instance method
+            def fn(*args, **kwargs):
+                result = instance_method(*args, **kwargs)   # ()->call the instance method
                 if isinstance(result, (pd.DataFrame, pd.Series)):
                     try:
                         name = result.name
@@ -97,7 +98,7 @@ class Table(object):
         Parameters
         ----------
         condition : function, signature: condition(Z,N)->boolean
-
+        name: string, optional name for the resulting Table
         Example:
         ----------
         greater_than_8 = lambda Z,N: Z > 8 and N > 8
@@ -105,6 +106,46 @@ class Table(object):
         """
         idx = [(Z, N) for Z, N in self.df.index if condition(Z, N)]
         return Table(df=self.df[idx], name=name)
+
+
+    def __len__(self):
+        "Return the total number of nuclei"
+        return len(self.df)
+
+
+    def intersection(self, table):
+        """
+        Select nuclei which also belong to table
+
+        Parameters
+        ----------
+        table: Table, Table object
+        
+        Example:
+        ----------
+        Table('AME2003').intersection(Table('AME1995'))
+        """
+        idx = self.df.index & table.df.index
+        return Table(df=self.df[idx], name=self.name)        
+
+    def not_in(self, table):
+        """
+        Select nuclei not in table
+
+        Parameters
+        ----------
+        table: Table, Table object from where nuclei should be removed
+        
+        Example:
+        ----------
+        Find the new nuclei in AME2003 with Z,N >= 8:
+
+        >>> condition = lambda Z,N: Z>=8 and N>=8
+        >>> len(Table('AME2003').select(condition).not_in(Table('AME1995')))
+        389
+        """
+        idx = self.df.index - table.df.index
+        return Table(df=self.df[idx], name=self.name)
 
     @property
     @memoize
@@ -209,7 +250,7 @@ class Table(object):
 
     def derived(self, name, relative_coords, formula):
         """Helper function for derived quantities"""
-        (relZ, relN) = relative_coords
+        relZ, relN = relative_coords
         daughter_idx = [(x[0] + relZ, x[1] + relN) for x in self.df.index]
         values = formula(self.df.values, self.df[daughter_idx].values)
         return Table(df=pd.Series(values, index=self.df.index, name=name + '(' + self.name + ')'))

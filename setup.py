@@ -9,7 +9,7 @@ setup(
     include_package_data=True,
     zip_safe = False,
     package_data={'masstable': ['masstable/data/*.txt']},
-    url='https://github.com/elyase/masstable',
+    url='http://elyase.github.io/masstable/',
     license='MIT',
     description='Utilities for working with nuclear mass tables.',
     long_description=open('README.rst').read(),
