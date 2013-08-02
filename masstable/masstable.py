@@ -30,7 +30,7 @@ class Table(object):
             return None
 
     names = ['AME2003', 'AME2003all', 'AME2012', 'AME2012all', 'AME1995', 'AME1995all',
-             'DUZU', 'FRDM95', 'KTUY05', 'ETFSI12', 'HFB14', 'TCSM12']
+             'DUZU', 'FRDM95', 'KTUY05', 'ETFSI12', 'HFB14', 'TCSM12', 'BR2013']
 
     def load(self, name):
         "Imports a mass table from a file"
@@ -61,7 +61,7 @@ class Table(object):
             N = param[1]
             try:
                 return self.df.ix[(Z, N)]
-            except IndexError:
+            except (IndexError, KeyError):
                 return None
         else:
             return self.df[param]
@@ -105,7 +105,10 @@ class Table(object):
         Table('AME2003').select(greater_than_8)
         """
         idx = [(Z, N) for Z, N in self.df.index if condition(Z, N)]
-        return Table(df=self.df[idx], name=name)
+        try:
+            return Table(df=self.df.ix[idx], name=name)
+        except:
+            return Table(df = pd.DataFrame(index=[], columns=[]), name='')
 
 
     def __len__(self):
@@ -252,7 +255,7 @@ class Table(object):
         """Helper function for derived quantities"""
         relZ, relN = relative_coords
         daughter_idx = [(x[0] + relZ, x[1] + relN) for x in self.df.index]
-        values = formula(self.df.values, self.df[daughter_idx].values)
+        values = formula(self.df.values, self.df.loc[daughter_idx].values)
         return Table(df=pd.Series(values, index=self.df.index, name=name + '(' + self.name + ')'))
 
     def __repr__(self):
