@@ -42,6 +42,11 @@ class Table(object):
     def from_list(cls, l, name=None):
         return Table(df=l, name=name)
 
+    @classmethod
+    def from_ZNM(cls, Z, N, M, name=None):
+        df = pd.DataFrame.from_dict({'Z': Z, 'N': N, 'M': M}).set_index(['Z','N'])['M']
+        return Table(df=df, name=name)
+
     @property
     def Z(self):
         return self.df.index.get_level_values('Z').values
