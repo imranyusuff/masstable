@@ -16,7 +16,7 @@ The Nuclear Mass Table Toolkit provides utilities to work with nuclear mass tabl
 * **ETFSI12**: Y. Aboussir et al., *At. Data Nucl. Data Tables* **61** (1995) 127
 * **HFB14**: S. Goriely, M. Samyn, J.M. Pearson, *Phys. Rev. C* **75** (2007) 064312
 
-See the [full documentation](http://elyase.github.io/masstable/)
+See the full documentation at http://elyase.github.io/masstable/.
 
 Usage:
 ---------
