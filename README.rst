@@ -14,7 +14,13 @@ The Nuclear Mass Table Toolkit provides utilities to work with nuclear mass tabl
 * **FRDM95**: Moller, P. et al., *At. Data and Nuc. Data Tables* **59** (1995) 185
 * **KTUY05**: H. Koura, T.Tachibana, M. Uno, M. Yamada, *Progr. Theor. Phys.* **113** (2005) 305
 * **ETFSI12**: Y. Aboussir et al., *At. Data Nucl. Data Tables* **61** (1995) 127
-* **HFB14**: S. Goriely, M. Samyn, J.M. Pearson, *Phys. Rev. C* **75** (2007) 064312
+* **MAJA88**: Masson, P. J., and J. Jänecke, *Atomic Data and Nuclear Data Tables* **39.2** (1988): 273-280.
+* **GK88**: Jänecke, J., and P. J. Masson, *Atomic Data and Nuclear Data Tables* **39.2** (1988): 265-271.
+* **HFB14**: S. Goriely, M. Samyn, J.M. Pearson, *Phys. Rev. C* **75** 064312 (2007)
+* **HFB26**: S. Goriely, N. Chamel, J.M. Pearson, *Phys. Rev. C* **88** 024308 (2013)
+* **WS32010**: N. Wang, Z. Liang, M. Liu, X. Wu, *Phys. Rev. C* **82** 044304 (2010)
+* **WS32011**: M. Liu, N. Wang, Y. Deng, X. Wu, *Phys. Rev. C* **84** 014333 (2011)
+
 
 Usage:
 ---------
@@ -45,7 +51,7 @@ Usage:
 .. code-block:: python
 
 	>>> table = Table('AME2012').even_even.s2n
-	Z  N 
+	Z  N
 	2  2           NaN
 	   4      0.975454
 	   6      2.125034
@@ -86,7 +92,7 @@ Just do:
 
 Requirements
 -------------
-	
+
 * python >= 2.7
 * pandas >= 0.11
 
