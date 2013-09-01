@@ -5,9 +5,11 @@ import math
 
 package_dir, _ = os.path.split(__file__)
 
+
 def memoize(f):
     """Really fast memoizer"""
     class memodict(dict):
+
         def __missing__(self, key):
             ret = self[key] = f(key)
             return ret
@@ -16,36 +18,63 @@ def memoize(f):
 
 class Table(object):
 
-    def __init__(self, name=None, df=None):
+    def __init__(self, name='', df=None):
         "Init from a Series/Dataframe (df) of a file (name)"
-        if df is not None:
+        if df is not None:  # init from dataframe
             self.df = df
-        elif name in self.names:
             self.name = name
-            self.df = self.load(name)
-            self.df.name = name
+        elif name in self.names:  # init from name
+            self.name = name
+            self.df = self.from_name(name).df
+            # self.df.name = name
         else:
-            print 'Error: Invalid table name. Valid names are:'
-            print ' '.join(Table.names)
+            print ('Error: Invalid table name. Valid names are:')
+            print (' '.join(Table.names))
             return None
 
     names = ['AME2003', 'AME2003all', 'AME2012', 'AME2012all', 'AME1995', 'AME1995all',
-             'DUZU', 'FRDM95', 'KTUY05', 'ETFSI12', 'HFB14', 'TCSM12', 'BR2013']
+             'DUZU', 'FRDM95', 'KTUY05', 'ETFSI12', 'HFB14', 'HFB26', 'TCSM12', 'BR2013', 'MAJA88',
+             'GK88', 'WS32010', 'WS32011']
 
-    def load(self, name):
+    @classmethod
+    def from_name(cls, name):
         "Imports a mass table from a file"
         filename = os.path.join(package_dir, 'data', name + '.txt')
-        df = pd.read_csv(filename, header=0, delim_whitespace=True, index_col=[0, 1])
-        return df['M']
+        return cls.from_file(filename, name)
 
     @classmethod
-    def from_list(cls, l, name=None):
-        return Table(df=l, name=name)
+    def from_file(cls, filename, name=''):
+        "Imports a mass table from a file"
+        df = pd.read_csv(filename, header=0, delim_whitespace=True, index_col=[0, 1])['M']
+        df.name = name
+        return cls(df=df, name=name)
 
     @classmethod
-    def from_ZNM(cls, Z, N, M, name=None):
-        df = pd.DataFrame.from_dict({'Z': Z, 'N': N, 'M': M}).set_index(['Z','N'])['M']
-        return Table(df=df, name=name)
+    def from_ZNM(cls, Z, N, M, name=''):
+        """
+        Creates a table from array Z,N,M
+
+        Example:
+        ________
+
+        >>> Z = [82, 82, 83]
+        >>> N = [126, 127, 130]
+        >>> M = [-21.34, -18.0, -14.45]
+        >>> Table.from_ZNM(Z, N, M, name='Custom Table')
+        Z   N
+        82  126   -21.34
+            127   -18.00
+        83  130   -14.45
+        Name: Custom Table, dtype: float64
+        """
+        df = pd.DataFrame.from_dict({'Z': Z, 'N': N, 'M': M}).set_index(['Z', 'N'])['M']
+        df.name = name
+        return cls(df=df, name=name)
+
+    @classmethod
+    def from_array(cls, arr, name=''):
+        Z, N, M = arr.T
+        return cls.from_ZNM(Z, N, M, name)
 
     @property
     def Z(self):
@@ -92,34 +121,49 @@ class Table(object):
         for e in self.df.iteritems():
             yield e
 
+    def __add__(self, other):
+        return Table(df=self.df + other.df,
+                     name="{}+{}".format(self.name, other.name))
+
+    def __sub__(self, other):
+        return Table(df=self.df - other.df,
+                     name="{}+{}".format(self.name, other.name))
+
     def align(self, *args, **kwargs):
         result = self.df.align(*args, **kwargs)[0]
         return Table(result.name, result)
 
-    def select(self, condition, name=None):
+    def select(self, condition, name=''):
         """
         Selects nuclei according to condition
 
         Parameters
         ----------
-        condition : function, signature: condition(Z,N)->boolean
+        condition : function,
+            Can have one of the signatures f(M), f(Z,N) or f(Z, N, M)
+            must return a boolean value
         name: string, optional name for the resulting Table
         Example:
         ----------
         greater_than_8 = lambda Z,N: Z > 8 and N > 8
         Table('AME2003').select(greater_than_8)
         """
-        idx = [(Z, N) for Z, N in self.df.index if condition(Z, N)]
-        try:
-            return Table(df=self.df.ix[idx], name=name)
-        except:
-            return Table(df = pd.DataFrame(index=[], columns=[]), name='')
+        if condition.func_code.co_argcount == 1:
+            idx = [(Z, N) for (Z, N), M in self if condition(M)]
+        if condition.func_code.co_argcount == 2:
+            idx = [(Z, N) for (Z, N) in self.index if condition(Z, N)]
+        if condition.func_code.co_argcount == 3:
+            idx = [(Z, N) for (Z, N), M in self if condition(Z, N, M)]
+        index = pd.MultiIndex.from_tuples(idx, names=['Z', 'N'])
+        return Table(df=self.df.ix[index], name=name)
 
+    @classmethod
+    def empty(cls, name=''):
+        return cls(df=pd.DataFrame(index=[], columns=[]), name=name)
 
     def __len__(self):
         "Return the total number of nuclei"
         return len(self.df)
-
 
     def intersection(self, table):
         """
@@ -128,13 +172,13 @@ class Table(object):
         Parameters
         ----------
         table: Table, Table object
-        
+
         Example:
         ----------
         Table('AME2003').intersection(Table('AME1995'))
         """
         idx = self.df.index & table.df.index
-        return Table(df=self.df[idx], name=self.name)        
+        return Table(df=self.df[idx], name=self.name)
 
     def not_in(self, table):
         """
@@ -143,7 +187,7 @@ class Table(object):
         Parameters
         ----------
         table: Table, Table object from where nuclei should be removed
-        
+
         Example:
         ----------
         Find the new nuclei in AME2003 with Z,N >= 8:
@@ -158,25 +202,24 @@ class Table(object):
     @property
     @memoize
     def odd_odd(self):
-        return self.select(lambda Z,N: (Z % 2) and (N % 2), name=self.name)
-    
+        return self.select(lambda Z, N: (Z % 2) and (N % 2), name=self.name)
+
     @property
-    @memoize    
+    @memoize
     def odd_even(self):
-        return self.select(lambda Z,N: (Z % 2) and not(N % 2), name=self.name)
-    
+        return self.select(lambda Z, N: (Z % 2) and not(N % 2), name=self.name)
+
     @property
-    @memoize    
+    @memoize
     def even_odd(self):
-        return self.select(lambda Z,N: not(Z % 2) and (N % 2), name=self.name)
-    
+        return self.select(lambda Z, N: not(Z % 2) and (N % 2), name=self.name)
+
     @property
-    @memoize    
+    @memoize
     def even_even(self):
-        return self.select(lambda Z,N: not(Z % 2) and not(N % 2), name=self.name)  
+        return self.select(lambda Z, N: not(Z % 2) and not(N % 2), name=self.name)
 
     def error(self, relative_to='AME2003'):
-        ''
         """
         Calculate error difference
 
@@ -189,12 +232,41 @@ class Table(object):
         ----------
         Table('DUZU').error(relative_to='AME2003')
         """
-        return self.df - Table(relative_to).df
+        df = self.df - Table(relative_to).df
+        return Table(df=df)
 
     def rmse(self, relative_to='AME2003'):
-        'Calculate mean squared error'
+        """Calculate root mean squared error
+
+        Parameters
+        ----------
+        relative_to : string,
+            a valid mass table name.
+
+        Example:
+        ----------
+        >>> template = '{0:10}|{1:^6.2f}|{2:^6.2f}|{3:^6.2f}'
+        >>> print 'Model      ', 'AME95 ', 'AME03 ', 'AME12 '  #  Table header
+        ... for name in Table.names:
+        ...     print template.format(name, Table(name).rmse(relative_to='AME1995'),
+        ...                             Table(name).rmse(relative_to='AME2003'),
+        ...                             Table(name).rmse(relative_to='AME2012'))
+        Model       AME95  AME03  AME12
+        AME2003   | 0.13 | 0.00 | 0.13
+        AME2003all| 0.42 | 0.40 | 0.71
+        AME2012   | 0.16 | 0.13 | 0.00
+        AME2012all| 0.43 | 0.43 | 0.69
+        AME1995   | 0.00 | 0.13 | 0.16
+        AME1995all| 0.00 | 0.17 | 0.21
+        DUZU      | 0.52 | 0.52 | 0.76
+        FRDM95    | 0.79 | 0.78 | 0.95
+        KTUY05    | 0.78 | 0.77 | 1.03
+        ETFSI12   | 0.84 | 0.84 | 1.04
+        HFB14     | 0.84 | 0.83 | 1.02
+        """
+
         error = self.error(relative_to=relative_to)
-        return math.sqrt((error ** 2).mean())
+        return math.sqrt((error.df ** 2).mean())
 
     @property
     @memoize
@@ -207,7 +279,8 @@ class Table(object):
         # MeV
         AMU = 931.494028
         # MeV
-        return self.Z * (M_P + M_E) + (self.A - self.Z) * M_N - (self.df + self.A * AMU)
+        df = self.Z * (M_P + M_E) + (self.A - self.Z) * M_N - (self.df + self.A * AMU)
+        return Table(df=df, name='BE' + '(' + self.name + ')')
 
     @property
     @memoize
@@ -263,6 +336,20 @@ class Table(object):
         values = formula(self.df.values, self.df.loc[daughter_idx].values)
         return Table(df=pd.Series(values, index=self.df.index, name=name + '(' + self.name + ')'))
 
+    @property
+    @memoize
+    def ds2n(self):
+        idx = [(x[0] + 0, x[1] + 2) for x in self.df.index]
+        values = self.s2n.values - self.s2n.loc[idx].values
+        return Table(df=pd.Series(values, index=self.df.index, name='ds2n' + '(' + self.name + ')'))
+
+    @property
+    @memoize
+    def ds2p(self):
+        idx = [(x[0] + 2, x[1]) for x in self.df.index]
+        values = self.s2p.values - self.s2p.loc[idx].values
+        return Table(df=pd.Series(values, index=self.df.index, name='ds2p' + '(' + self.name + ')'))
+
     def __repr__(self):
         return self.df.__repr__()
 
@@ -273,7 +360,11 @@ class Table(object):
         return Table(df=pd.concat([self.df] + [table.df for table in tables], axis=1))
 
 if __name__ == '__main__':
-    print Table('AME2003').head().join(Table('AME2012').head(), Table('DUZU').odd_odd.head())
-    print Table('AME2012all').tail()
-    print Table('AME2012').tail()
-    print Table.from_list([1,1])
+    # print Table('AME2003').head().join(Table('AME2012').head(), Table('DUZU').odd_odd.head())
+    # print Table.from_file('data/AME1995.txt', 'test')
+    # print Table.load('AME1995')
+    # print Table('GK88')
+    # print Table('FRDM95').
+    print Table('FRDM95')[101, 220]
+    # print Table('AME2012').tail()
+    # print Table.from_list([1,1])
