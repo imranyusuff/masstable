@@ -100,6 +100,11 @@ class Table(object):
         else:
             return self.df[param]
 
+    def __setitem__(self, key, value):
+        Z = key[0]
+        N = key[1]
+        self.df.ix[(Z,N)] = value
+
     def __getattr__(self, attr):
         # TODO: Pythonize
         "Pass properties and method calls to the DataFrame object"
