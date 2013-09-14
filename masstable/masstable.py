@@ -76,6 +76,11 @@ class Table(object):
         Z, N, M = arr.T
         return cls.from_ZNM(Z, N, M, name)
 
+    def to_file(self, filename):
+        with open(filename, 'w') as f:
+            f.write('Z   N   M\n')
+        self.df.to_csv(filename, sep='\t', mode='a')
+
     @property
     def Z(self):
         return self.df.index.get_level_values('Z').values
