@@ -34,7 +34,7 @@ class Table(object):
 
     names = ['AME2003', 'AME2003all', 'AME2012', 'AME2012all', 'AME1995', 'AME1995all',
              'DUZU', 'FRDM95', 'KTUY05', 'ETFSI12', 'HFB14', 'HFB26', 'TCSM12', 'BR2013', 'MAJA88',
-             'GK88', 'WS32010', 'WS32011']
+             'GK88', 'WS32010', 'WS32011', 'SVM13']
 
     @classmethod
     def from_name(cls, name):
@@ -93,17 +93,45 @@ class Table(object):
     def A(self):
         return self.Z + self.N
 
-    def __getitem__(self, param):
-        """Access [] operator"""
-        if isinstance(param, tuple):
-            Z = param[0]
-            N = param[1]
-            try:
-                return self.df.ix[(Z, N)]
-            except (IndexError, KeyError):
-                return None
-        else:
-            return self.df[param]
+    def __getitem__(self, index):
+        """Access [] operator
+        Examples:
+
+        >>> Table('DUZU')[82, 126:127]
+                DUZU
+        Z   N
+        82  126 -22.29
+            127 -17.87
+
+        >>> Table('AME2012all')[118, :]
+                AME2012all
+        Z   N
+        118 173  198.93
+            174  199.27
+            175  201.43
+
+        """
+        if isinstance(index, tuple) and len(index)==2:
+            if isinstance(index[0], int):               # single N: "[82, :]"
+                startZ, stopZ = index[0], index[0]
+
+            if isinstance(index[1], int):
+                startN, stopN = index[1], index[1]      # single N: "[:, 126]"
+
+            if isinstance(index[0], slice):             # Z slice: "[:, 126]"
+                startZ, stopZ, stepZ = index[0].start, index[0].stop, index[0].step
+
+            if isinstance(index[1], slice):              # N slice: "[:, 126]"
+                startN, stopN, stepN = index[1].start, index[1].stop, index[1].step
+
+            if not startZ: startZ = min(self.Z) # might be optimized
+            if not stopZ:  stopZ = max(self.Z)
+            if not startN: startN = min(self.N)
+            if not stopN:  stopN = max(self.N)
+
+            x = self.df.reset_index()
+            x = x.loc[(x.Z>=startZ)&(x.Z<=stopZ)&(x.N>=startN)&(x.N<=stopN)]
+            return x.set_index(['Z', 'N']).sortlevel(0)
 
     def __setitem__(self, key, value):
         Z = key[0]
@@ -298,7 +326,7 @@ class Table(object):
         """Return Q_alpha"""
         M_ALPHA = 2.4249156         # He4 mass excess in MeV
         f = lambda parent, daugther: parent - daugther - M_ALPHA
-        return self.derived('Q_alpha', (0, -2), f)
+        return self.derived('Q_alpha', (-2, -2), f)
 
     @property
     @memoize
