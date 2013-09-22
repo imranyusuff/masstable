@@ -132,7 +132,7 @@ class Table(object):
             x = self.df.reset_index()
             x = x.loc[(x.Z>=startZ)&(x.Z<=stopZ)&(x.N>=startN)&(x.N<=stopN)]
             df = x.set_index(['Z', 'N']).sortlevel(0)
-            return Table(df=df, name=self.name)
+            return Table(df=df[df.columns[0]], name=self.name)
 
     def __setitem__(self, key, value):
         Z = key[0]
