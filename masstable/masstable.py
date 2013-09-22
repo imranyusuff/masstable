@@ -124,14 +124,15 @@ class Table(object):
             if isinstance(index[1], slice):              # N slice: "[:, 126]"
                 startN, stopN, stepN = index[1].start, index[1].stop, index[1].step
 
-            if not startZ: startZ = min(self.Z) # might be optimized
-            if not stopZ:  stopZ = max(self.Z)
-            if not startN: startN = min(self.N)
-            if not stopN:  stopN = max(self.N)
+            if not startZ: startZ = self.Z.min()  # might be optimized
+            if not stopZ:  stopZ = self.Z.max()
+            if not startN: startN = self.N.min()
+            if not stopN:  stopN = self.N.min()
 
             x = self.df.reset_index()
             x = x.loc[(x.Z>=startZ)&(x.Z<=stopZ)&(x.N>=startN)&(x.N<=stopN)]
-            return x.set_index(['Z', 'N']).sortlevel(0)
+            df = x.set_index(['Z', 'N']).sortlevel(0)
+            return Table(df=df, name=self.name)
 
     def __setitem__(self, key, value):
         Z = key[0]
