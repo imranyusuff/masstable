@@ -22,6 +22,7 @@ The Nuclear Mass Table Toolkit provides utilities to work with nuclear mass tabl
 * **WS32011**: M. Liu, N. Wang, Y. Deng, X. Wu, *Phys. Rev. C* **84** 014333 (2011)
 
 Main project page: http://elyase.github.io/masstable/
+
 See the full documentation at: http://masstable.readthedocs.org/en/latest/
 
 Usage:
