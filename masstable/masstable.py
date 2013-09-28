@@ -1,19 +1,22 @@
 import pandas as pd
 import os
 import math
-# TODO: Improve Access operator
+import functools
+from functools import wraps
 
 package_dir, _ = os.path.split(__file__)
 
 
-def memoize(f):
-    """Really fast memoizer"""
-    class memodict(dict):
+def memoize(obj):
+    cache = obj.cache = {}
 
-        def __missing__(self, key):
-            ret = self[key] = f(key)
-            return ret
-    return memodict().__getitem__
+    @functools.wraps(obj)
+    def memoizer(*args, **kwargs):
+        key = str(args) + str(kwargs)
+        if key not in cache:
+            cache[key] = obj(*args, **kwargs)
+        return cache[key]
+    return memoizer
 
 
 class Table(object):
@@ -23,7 +26,7 @@ class Table(object):
         if df is not None:  # init from dataframe
             self.df = df
             self.name = name
-        elif name in self.names:  # init from name
+        elif name in self._names:  # init from name
             self.name = name
             self.df = self.from_name(name).df
             # self.df.name = name
@@ -32,9 +35,21 @@ class Table(object):
             print (' '.join(Table.names))
             return None
 
-    names = ['AME2003', 'AME2003all', 'AME2012', 'AME2012all', 'AME1995', 'AME1995all',
+    _names = ['AME2003', 'AME2003all', 'AME2012', 'AME2012all', 'AME1995', 'AME1995all',
              'DUZU', 'FRDM95', 'KTUY05', 'ETFSI12', 'HFB14', 'HFB26', 'TCSM12', 'BR2013', 'MAJA88',
              'GK88', 'WS32010', 'WS32011', 'SVM13']
+
+    @classmethod
+    def names(cls):
+        """Return a list of the names of all supported mass models
+
+        >>> Table.names()
+        ['AME2003', 'AME2003all', 'AME2012', 'AME2012all', 'AME1995',
+        'AME1995all', 'DUZU', 'FRDM95', 'KTUY05', 'ETFSI12', 'HFB14',
+        'HFB26', 'TCSM12', 'BR2013', 'MAJA88', 'GK88', 'WS32010', 'WS32011',
+        'SVM13']
+        """
+        return cls._names
 
     @classmethod
     def from_name(cls, name):
@@ -52,7 +67,7 @@ class Table(object):
     @classmethod
     def from_ZNM(cls, Z, N, M, name=''):
         """
-        Creates a table from array Z,N,M
+        Creates a table from arrays Z, N and M
 
         Example:
         ________
@@ -76,21 +91,43 @@ class Table(object):
         Z, N, M = arr.T
         return cls.from_ZNM(Z, N, M, name)
 
-    def to_file(self, filename):
-        with open(filename, 'w') as f:
+    def to_file(self, path):
+        """Export the contents to a file as comma separated values.
+
+        Parameters
+        ----------
+        path : string
+            File path where the data should be saved to
+
+        Example
+        -------
+        Export the last ten elements of AME2012 to a new file:
+
+        >>> Table('AME2012').tail(10).to_file('last_ten.txt')
+        """
+        with open(path, 'w') as f:
             f.write('Z   N   M\n')
-        self.df.to_csv(filename, sep='\t', mode='a')
+        self.df.to_csv(path, sep='\t', mode='a')
 
     @property
     def Z(self):
+        """
+        Return the proton number Z for all nuclei in the table as a numpy array.
+        """
         return self.df.index.get_level_values('Z').values
 
     @property
     def N(self):
+        """
+        Return the neutron number N for all nuclei in the table as a numpy array.
+        """
         return self.df.index.get_level_values('N').values
 
     @property
     def A(self):
+        """
+        Return the mass number A for all nuclei in the table as a numpy array.
+        """
         return self.Z + self.N
 
     def __getitem__(self, index):
@@ -127,7 +164,7 @@ class Table(object):
             if not startZ: startZ = self.Z.min()  # might be optimized
             if not stopZ:  stopZ = self.Z.max()
             if not startN: startN = self.N.min()
-            if not stopN:  stopN = self.N.min()
+            if not stopN:  stopN = self.N.max()
 
             x = self.df.reset_index()
             x = x.loc[(x.Z>=startZ)&(x.Z<=stopZ)&(x.N>=startN)&(x.N<=stopN)]
@@ -168,13 +205,17 @@ class Table(object):
         return Table(df=self.df - other.df,
                      name="{}+{}".format(self.name, other.name))
 
+    def __div__(self, other):
+        return Table(df=self.df - other.df,
+                     name="{}+{}".format(self.name, other.name))
+
     def align(self, *args, **kwargs):
         result = self.df.align(*args, **kwargs)[0]
         return Table(result.name, result)
 
     def select(self, condition, name=''):
         """
-        Selects nuclei according to condition
+        Selects nuclei according to a condition on Z,N or M
 
         Parameters
         ----------
@@ -182,10 +223,13 @@ class Table(object):
             Can have one of the signatures f(M), f(Z,N) or f(Z, N, M)
             must return a boolean value
         name: string, optional name for the resulting Table
+
         Example:
-        ----------
-        greater_than_8 = lambda Z,N: Z > 8 and N > 8
-        Table('AME2003').select(greater_than_8)
+        --------
+        Select all nuclei with A > 160:
+
+        >>> A_gt_160 = lambda Z,N: Z + N > 160
+        >>> Table('AME2003').select(A_gt_160)
         """
         if condition.func_code.co_argcount == 1:
             idx = [(Z, N) for (Z, N), M in self if condition(M)]
@@ -196,17 +240,58 @@ class Table(object):
         index = pd.MultiIndex.from_tuples(idx, names=['Z', 'N'])
         return Table(df=self.df.ix[index], name=name)
 
+    def at(self, nuclei):
+        """Return a selection of the Table at positions given by ``nuclei``
+
+        Parameters
+        ----------
+        nuclei: list of tuples
+            A list where each element is tuple of the form (Z,N)
+
+        Example
+        -------
+        Return binding energies at magic nuclei:
+
+        >>> magic_nuclei = [(20,28), (50,50), (50,82), (82,126)]
+        >>> Table('AME2012').binding_energy.at(magic_nuclei)
+        Z   N
+        20  28      416.014215
+        50  50      825.325172
+            82     1102.876416
+        82  126    1636.486450
+        """
+        index = pd.MultiIndex.from_tuples(nuclei, names=['Z', 'N'])
+        return Table(df=self.df.ix[index], name=self.name)
+
     @classmethod
     def empty(cls, name=''):
         return cls(df=pd.DataFrame(index=[], columns=[]), name=name)
 
     def __len__(self):
-        "Return the total number of nuclei"
+        """Return the total number of nuclei:
+
+        >>> len(Table('AME2012'))
+        2438
+        """
+        return len(self.df)
+
+    @property
+    def count(self):
+        """Return the total number of nuclei in the table:
+
+        >>> Table('AME2012').count
+        2438
+
+        It is also possible to do:
+
+        >>> len(Table('AME2012'))
+        2438
+        """
         return len(self.df)
 
     def intersection(self, table):
         """
-        Select nuclei which also belong to table
+        Select nuclei which also belong to ``table``
 
         Parameters
         ----------
@@ -231,8 +316,7 @@ class Table(object):
         ----------
         Find the new nuclei in AME2003 with Z,N >= 8:
 
-        >>> condition = lambda Z,N: Z>=8 and N>=8
-        >>> len(Table('AME2003').select(condition).not_in(Table('AME1995')))
+        >>> Table('AME2003').not_in(Table('AME1995'))[8:,8:].count
         389
         """
         idx = self.df.index - table.df.index
@@ -241,21 +325,41 @@ class Table(object):
     @property
     @memoize
     def odd_odd(self):
+        """Selects odd-odd nuclei from the table:
+
+        >>> Table('FRDM95').odd_odd
+        Out[13]:
+        Z   N
+        9   9       1.21
+            11      0.10
+            13      3.08
+            15      9.32
+        ...
+        """
         return self.select(lambda Z, N: (Z % 2) and (N % 2), name=self.name)
 
     @property
     @memoize
     def odd_even(self):
+        """
+        Selects odd-even nuclei from the table
+        """
         return self.select(lambda Z, N: (Z % 2) and not(N % 2), name=self.name)
 
     @property
     @memoize
     def even_odd(self):
+        """
+        Selects even-odd nuclei from the table
+        """
         return self.select(lambda Z, N: not(Z % 2) and (N % 2), name=self.name)
 
     @property
     @memoize
     def even_even(self):
+        """
+        Selects even-even nuclei from the table
+        """
         return self.select(lambda Z, N: not(Z % 2) and not(N % 2), name=self.name)
 
     def error(self, relative_to='AME2003'):
@@ -269,7 +373,7 @@ class Table(object):
 
         Example:
         ----------
-        Table('DUZU').error(relative_to='AME2003')
+        >>> Table('DUZU').error(relative_to='AME2003')
         """
         df = self.df - Table(relative_to).df
         return Table(df=df)
@@ -310,6 +414,9 @@ class Table(object):
     @property
     @memoize
     def binding_energy(self):
+        """
+        Return binding energies instead of mass excesses
+        """
         M_P = 938.2723
         # MeV
         M_E = 0.5110
@@ -378,6 +485,10 @@ class Table(object):
     @property
     @memoize
     def ds2n(self):
+        """Calculates the derivative of the neutron separation energies:
+
+        ds2n(Z,A) = s2n(Z,A) - s2n(Z,A+2)
+        """
         idx = [(x[0] + 0, x[1] + 2) for x in self.df.index]
         values = self.s2n.values - self.s2n.loc[idx].values
         return Table(df=pd.Series(values, index=self.df.index, name='ds2n' + '(' + self.name + ')'))
@@ -385,6 +496,10 @@ class Table(object):
     @property
     @memoize
     def ds2p(self):
+        """Calculates the derivative of the neutron separation energies:
+
+        ds2n(Z,A) = s2n(Z,A) - s2n(Z,A+2)
+        """
         idx = [(x[0] + 2, x[1]) for x in self.df.index]
         values = self.s2p.values - self.s2p.loc[idx].values
         return Table(df=pd.Series(values, index=self.df.index, name='ds2p' + '(' + self.name + ')'))
