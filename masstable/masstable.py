@@ -38,7 +38,7 @@ class Table(object):
             return None
 
     _names = ['AME2003', 'AME2003all', 'AME2012', 'AME2012all', 'AME1995', 'AME1995all',
-             'DUZU', 'FRDM95', 'KTUY05', 'ETFSI12', 'HFB14', 'HFB26', 'TCSM12', 'BR2013', 'MAJA88',
+             'DUZU', 'FRDM95', 'KTUY05', 'ETFSI12', 'HFB14', 'HFB26', 'TCSM12', 'TCSM13', 'BR2013', 'MAJA88',
              'GK88', 'WS32010', 'WS32011', 'SVM13']
 
     @classmethod
