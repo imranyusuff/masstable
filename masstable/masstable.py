@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import pandas as pd
 import os
 import math
@@ -46,7 +48,7 @@ class Table(object):
         >>> Table.names()
         ['AME2003', 'AME2003all', 'AME2012', 'AME2012all', 'AME1995',
         'AME1995all', 'DUZU', 'FRDM95', 'KTUY05', 'ETFSI12', 'HFB14',
-        'HFB26', 'TCSM12', 'BR2013', 'MAJA88', 'GK88', 'WS32010', 'WS32011',
+        'HFB26', 'TCSM12', 'TCSM13', 'BR2013', 'MAJA88', 'GK88', 'WS32010', 'WS32011',
         'SVM13']
         """
         return cls._names
@@ -512,6 +514,66 @@ class Table(object):
 
     def join(self, join='outer', *tables):
         return Table(df=pd.concat([self.df] + [table.df for table in tables], axis=1))
+
+
+    def chart_plot(self, ax=None, cmap='RdBu',
+               xlabel='N', ylabel='Z', grid_on=True, colorbar=True):
+        """Plot a nuclear chart with (N,Z) as axis and the values
+        of the Table as a color scale
+
+        Parameters
+        ----------
+        ax: optional matplotlib axes
+                defaults to current axes
+        cmap: a matplotlib colormap
+                default: 'RdBu'
+        xlabel: string representing the label of the x axis
+            default: 'N'
+        ylabel: string, default: 'Z'
+            the label of the x axis
+        grid_on: boolean, default: True,
+            whether to draw the axes grid or not
+        colorbar: boolean, default: True
+            whether to draw a colorbar or not
+
+        Returns
+        -------
+        ax: a matplotlib axes object
+
+        Example
+        -------
+        Plot the theoretical deviation for the Möller's model::
+
+        >>> Table('FRDM95').error().chart_plot()
+
+        """
+        from matplotlib.mlab import griddata
+        from numpy import linspace, meshgrid
+        import matplotlib.pyplot as plt
+
+        # extract the 1D arrays to be plotted
+        x = self.dropna().N
+        y = self.dropna().Z
+        z = self.dropna().values
+
+        #convert to matplotlibs grid format
+        xi = linspace(min(x), max(x), max(x) - min(x) + 1)
+        yi = linspace(min(y), max(y), max(y) - min(y) + 1)
+        Z = griddata(x, y, z, xi, yi)
+        X, Y = meshgrid(xi, yi)
+
+        # create and customize plot
+        if ax is None:
+            ax = plt.gca()
+        chart = ax.pcolormesh(X, Y, Z, cmap=cmap)
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+        ax.grid(grid_on)
+        ax.set_aspect('equal')
+        if colorbar:
+            plt.colorbar(chart)
+
+        return ax
 
 if __name__ == '__main__':
     # print Table('AME2003').head().join(Table('AME2012').head(), Table('DUZU').odd_odd.head())
