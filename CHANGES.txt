@@ -7,3 +7,4 @@ v0.1.6, 2013.07.27 -- Added table TCSM12
 v0.1.7, 2013.07.27 -- Added table Audi 1995
 v0.1.8, 2013.07.27 -- New Tables, fancy indexing, lots of bugs
 v0.2.0, 2013.07.27 -- Added docs, bug fixes
+v0.2.1, 2013.07.27 -- Added TCSM13 table

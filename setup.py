@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='masstable',
-    version='0.2.0',
+    version='0.2.1',
     author='Yaser Martinez',
     author_email='yaser.martinez@gmail.com',
     packages=find_packages(),
